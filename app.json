@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "UpsideDown",
+    "slug": "upsidedown",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a1628"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.upsidedown.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "UpsideDown needs your location to calculate your antipodal point — the other side of the Earth from where you stand!",
+        "NSLocationAlwaysUsageDescription": "UpsideDown needs your location to calculate your antipodal point."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a1628"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.upsidedown.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "UpsideDown needs your location to calculate your antipodal point — the other side of the Earth from where you stand!"
+        }
+      ]
+    ]
+  }
+}
