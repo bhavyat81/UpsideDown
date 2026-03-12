@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { subscribeToPins, initFirebase } from '../services/firebase';
 import { Pin } from '../types';
 import { COLORS } from '../utils/constants';
-import { formatCoordinates, formatTimestamp } from '../utils/helpers';
+import { formatTimestamp } from '../utils/helpers';
 
 /**
  * CommunityScreen — Shows all community pins from other users.
@@ -49,10 +49,9 @@ export default function CommunityScreen() {
     Alert.alert(
       `📍 ${pin.username ?? 'Anonymous Explorer'}`,
       [
-        `🌍 Their location:\n${formatCoordinates(pin.originalLocation)}`,
+        `🌍 Their location:\n📍 Somewhere on Earth`,
         ``,
-        `🔄 Antipodal point:\n${formatCoordinates(pin.antipodalLocation)}`,
-        pin.antipodalPlaceName ? `📌 ${pin.antipodalPlaceName}` : '',
+        `🔄 Upside Down:\n${pin.antipodalPlaceName ?? 'Unknown location'}`,
         ``,
         `🕐 Pinned: ${formatTimestamp(pin.timestamp)}`,
       ]
@@ -81,14 +80,14 @@ export default function CommunityScreen() {
           <View style={styles.coordRow}>
             <Ionicons name="location" size={12} color={COLORS.userMarker} />
             <Text style={styles.coordText}>
-              {formatCoordinates(item.originalLocation)}
+              📍 Somewhere on Earth
             </Text>
           </View>
 
           <View style={styles.coordRow}>
             <Ionicons name="navigate" size={12} color={COLORS.antipodal} />
             <Text style={[styles.coordText, { color: COLORS.antipodal }]}>
-              {item.antipodalPlaceName ?? formatCoordinates(item.antipodalLocation)}
+              {item.antipodalPlaceName ?? 'Upside Down Location'}
             </Text>
           </View>
 
@@ -121,7 +120,7 @@ export default function CommunityScreen() {
         <Text style={styles.headerText}>
           {pins.length === 0
             ? 'No community pins yet — be the first!'
-            : `${pins.length} explorer${pins.length === 1 ? '' : 's'} have shared their antipodal connections`}
+            : `${pins.length} explorer${pins.length === 1 ? '' : 's'} have shared their Upside Down connections`}
         </Text>
       </View>
 
@@ -130,7 +129,7 @@ export default function CommunityScreen() {
           <Text style={styles.emptyEmoji}>🌍</Text>
           <Text style={styles.emptyTitle}>No pins yet!</Text>
           <Text style={styles.emptySubtitle}>
-            Head to the Home tab, find your antipodal point, and drop a pin to
+            Head to the Home tab, find your Upside Down location, and drop a pin to
             be the first community explorer!
           </Text>
         </View>

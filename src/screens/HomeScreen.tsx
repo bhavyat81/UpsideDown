@@ -15,12 +15,18 @@ import { Ionicons } from '@expo/vector-icons';
 import UpsideDownMapView from '../components/MapView';
 import AntipodalCard from '../components/AntipodalCard';
 import GlobeAnimation from '../components/GlobeAnimation';
+import DigAnimation from '../components/DigAnimation';
 import {
   requestLocationPermission,
   getCurrentLocation,
   reverseGeocode,
 } from '../services/location';
-import { calculateAntipodal, getAntipodalFunFact } from '../services/antipodal';
+import {
+  calculateAntipodal,
+  getAntipodalFunFact,
+  isLikelyOcean,
+  findNearestLand,
+} from '../services/antipodal';
 import {
   initFirebase,
   signInAnon,
@@ -36,20 +42,24 @@ import { generateAnonymousName } from '../utils/helpers';
  *
  * Responsibilities:
  * - Request & obtain GPS location
- * - Calculate the antipodal point
- * - Render the interactive map
+ * - Calculate the upside-down point
+ * - Render the dig animation, then reveal the interactive map
  * - Allow the user to drop a community pin
  */
 export default function HomeScreen() {
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
   const [antipodalLocation, setAntipodalLocation] = useState<Coordinates | null>(null);
   const [antipodalPlaceName, setAntipodalPlaceName] = useState<string | undefined>();
+  const [currentPlaceName, setCurrentPlaceName] = useState<string | undefined>();
+  const [nearestLandLocation, setNearestLandLocation] = useState<Coordinates | null>(null);
+  const [nearestLandPlaceName, setNearestLandPlaceName] = useState<string | null>(null);
   const [communityPins, setCommunityPins] = useState<Pin[]>([]);
   const [viewMode, setViewMode] = useState<MapViewMode>('original');
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [funFact, setFunFact] = useState<string>('');
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showDigAnimation, setShowDigAnimation] = useState(false);
 
   // Fade-in animation for the welcome screen
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -81,32 +91,61 @@ export default function HomeScreen() {
   const handleFindAntipodal = useCallback(async () => {
     setLoading(true);
     setShowWelcome(false);
+
     try {
       const granted = await requestLocationPermission();
       if (!granted) {
         Alert.alert(
           'Location Required',
-          'UpsideDown needs your location to find your antipodal point. Please enable location access in your device settings.',
+          "UpsideDown needs your location to find what's on the other side of the Earth from you! Please enable location access in your device settings.",
           [{ text: 'OK' }],
         );
         setLoading(false);
+        setShowWelcome(true);
         return;
       }
+
+      // Show the dig animation immediately while we fetch in parallel
+      setShowDigAnimation(true);
 
       const location = await getCurrentLocation();
       setCurrentLocation(location);
 
+      // Reverse geocode the user's own location
+      reverseGeocode(location)
+        .then(setCurrentPlaceName)
+        .catch(() => {});
+
       const antipodal = calculateAntipodal(location);
       setAntipodalLocation(antipodal);
 
-      // Reverse geocode the antipodal point (non-blocking)
+      // Reverse geocode the upside-down point, then check for nearest land
       reverseGeocode(antipodal)
-        .then(setAntipodalPlaceName)
-        .catch(() => {});
+        .then(async (placeName) => {
+          setAntipodalPlaceName(placeName);
+
+          if (isLikelyOcean(placeName)) {
+            const nearestLand = findNearestLand(antipodal);
+            setNearestLandLocation(nearestLand);
+            reverseGeocode(nearestLand)
+              .then(setNearestLandPlaceName)
+              .catch(() => setNearestLandPlaceName('Nearest Land'));
+          } else {
+            setNearestLandLocation(null);
+            setNearestLandPlaceName(null);
+          }
+        })
+        .catch(() => {
+          // Geocoding failed — we don't know if it's ocean or land,
+          // so we skip the nearest land marker rather than showing a misleading one
+          setAntipodalPlaceName('Unknown location');
+          setNearestLandLocation(null);
+        });
 
       // Refresh the fun fact
       setFunFact(getAntipodalFunFact());
     } catch (err) {
+      setShowDigAnimation(false);
       Alert.alert(
         'Location Error',
         'Could not retrieve your location. Please try again.',
@@ -117,11 +156,16 @@ export default function HomeScreen() {
     }
   }, []);
 
+  // Called when the dig animation finishes playing
+  const handleAnimationComplete = useCallback(() => {
+    setShowDigAnimation(false);
+  }, []);
+
   const handleDropPin = useCallback(async () => {
     if (!currentLocation || !antipodalLocation || !userId) {
       Alert.alert(
         'Not ready',
-        'Please find your location first before dropping a pin!',
+        'Please find your Upside Down location first before dropping a pin!',
         [{ text: 'OK' }],
       );
       return;
@@ -138,7 +182,7 @@ export default function HomeScreen() {
       );
       Alert.alert(
         '📍 Pin Dropped!',
-        `Your antipodal connection has been shared with the community as "${username}"!`,
+        `Your Upside Down connection has been shared with the community as "${username}"!`,
         [{ text: 'Awesome! 🎉' }],
       );
     } catch {
@@ -185,11 +229,11 @@ export default function HomeScreen() {
             activeOpacity={0.85}
           >
             <Ionicons name="earth" size={22} color={COLORS.background} />
-            <Text style={styles.findButtonText}>Find My Antipodal Point!</Text>
+            <Text style={styles.findButtonText}>Find My Upside Down! 🌍</Text>
           </TouchableOpacity>
 
           <Text style={styles.permissionNote}>
-            📍 We'll ask for your location — it's only used to calculate your antipodal point.
+            📍 We'll ask for your location — it's only used to find what's on the other side of the Earth from you.
           </Text>
         </ScrollView>
       </Animated.View>
@@ -198,6 +242,11 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Dig animation — shown immediately after tapping the button */}
+      {showDigAnimation && (
+        <DigAnimation onComplete={handleAnimationComplete} />
+      )}
+
       {/* Map fills most of the screen */}
       <View style={styles.mapContainer}>
         <UpsideDownMapView
@@ -205,10 +254,17 @@ export default function HomeScreen() {
           antipodalLocation={antipodalLocation}
           communityPins={communityPins}
           viewMode={viewMode}
+          nearestLandLocation={nearestLandLocation}
           onCommunityPinPress={(pin) => {
             Alert.alert(
               pin.username ?? 'Anonymous Explorer',
-              `Original: ${pin.originalLocation.latitude.toFixed(4)}°, ${pin.originalLocation.longitude.toFixed(4)}°\nAntipodal: ${pin.antipodalLocation.latitude.toFixed(4)}°, ${pin.antipodalLocation.longitude.toFixed(4)}°${pin.antipodalPlaceName ? `\n(${pin.antipodalPlaceName})` : ''}`,
+              [
+                `🌍 Their location:\n📍 Somewhere on Earth`,
+                ``,
+                `🔄 Upside Down:\n${pin.antipodalPlaceName ?? 'Unknown location'}`,
+                ``,
+                `🕐 Pinned: ${new Date(pin.timestamp).toLocaleDateString()}`,
+              ].join('\n'),
               [{ text: 'Close' }],
             );
           }}
@@ -229,6 +285,9 @@ export default function HomeScreen() {
         originalLocation={currentLocation}
         antipodalLocation={antipodalLocation}
         antipodalPlaceName={antipodalPlaceName}
+        originalPlaceName={currentPlaceName}
+        nearestLandLocation={nearestLandLocation}
+        nearestLandPlaceName={nearestLandPlaceName}
         loading={loading}
         onDropPin={handleDropPin}
         onToggleView={currentLocation ? handleToggleView : undefined}

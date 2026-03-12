@@ -16,6 +16,8 @@ interface UpsideDownMapProps {
   communityPins: Pin[];
   viewMode: MapViewMode;
   onCommunityPinPress?: (pin: Pin) => void;
+  /** When provided, renders a green "Nearest Land" marker */
+  nearestLandLocation?: Coordinates | null;
 }
 
 /**
@@ -23,8 +25,10 @@ interface UpsideDownMapProps {
  *
  * Shows:
  * - The user's current location (amber marker)
- * - The antipodal point (teal marker)
+ * - The upside-down point (teal marker)
+ * - The nearest land point (green marker, only shown when upside-down point is in ocean)
  * - A dashed line connecting the two points (visual representation of the tunnel)
+ * - A dashed line from the upside-down point to nearest land (when applicable)
  * - Community pins from other users
  */
 export default function UpsideDownMapView({
@@ -33,6 +37,7 @@ export default function UpsideDownMapView({
   communityPins,
   viewMode,
   onCommunityPinPress,
+  nearestLandLocation,
 }: UpsideDownMapProps) {
   // Centre the map on the relevant point depending on view mode
   const centerLocation =
@@ -73,18 +78,38 @@ export default function UpsideDownMapView({
           <PinMarker
             coordinates={antipodalLocation}
             variant="antipodal"
-            title="Your antipodal point"
+            title="Your Upside Down"
             description="The other side of the Earth from you"
           />
         )}
 
-        {/* Dashed polyline connecting original & antipodal (approximate) */}
+        {/* Nearest land marker (shown when upside-down lands in ocean) */}
+        {nearestLandLocation && (
+          <PinMarker
+            coordinates={nearestLandLocation}
+            variant="nearestLand"
+            title="Nearest Land 🏝️"
+            description="Closest landmass to your upside-down point"
+          />
+        )}
+
+        {/* Dashed polyline connecting original & upside-down (long-dash blue, represents the tunnel) */}
         {currentLocation && antipodalLocation && (
           <Polyline
             coordinates={[currentLocation, antipodalLocation]}
             strokeColor={COLORS.primary}
             strokeWidth={1}
             lineDashPattern={[6, 6]}
+          />
+        )}
+
+        {/* Short-dash green polyline from upside-down point to nearest land (shorter dashes = surface path) */}
+        {antipodalLocation && nearestLandLocation && (
+          <Polyline
+            coordinates={[antipodalLocation, nearestLandLocation]}
+            strokeColor={COLORS.nearestLand}
+            strokeWidth={1}
+            lineDashPattern={[4, 4]}
           />
         )}
 
