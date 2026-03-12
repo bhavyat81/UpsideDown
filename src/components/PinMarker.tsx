@@ -8,7 +8,7 @@ import { COLORS } from '../utils/constants';
 interface PinMarkerProps {
   coordinates: Coordinates;
   /** Visual style of the pin */
-  variant: 'user' | 'antipodal' | 'community' | 'communityAntipodal';
+  variant: 'user' | 'antipodal' | 'community' | 'communityAntipodal' | 'nearestLand';
   /** Called when the marker is tapped */
   onPress?: () => void;
   /** Accessible label for the marker */
@@ -33,11 +33,15 @@ const VARIANT_CONFIG = {
     color: `${COLORS.communityPin}99`,
     icon: 'navigate-circle' as const,
   },
+  nearestLand: {
+    color: COLORS.nearestLand,
+    icon: 'leaf' as const,
+  },
 };
 
 /**
  * PinMarker — A custom map marker for react-native-maps.
- * Supports four visual variants: user, antipodal, community, and community-antipodal.
+ * Supports five visual variants: user, antipodal, community, community-antipodal, and nearestLand.
  */
 export default function PinMarker({
   coordinates,

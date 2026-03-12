@@ -32,7 +32,7 @@ function InfoRow({ icon, iconColor, title, body }: InfoRowProps) {
 }
 
 /**
- * AboutScreen — Info about the app, the antipodal concept, and fun facts.
+ * AboutScreen — Info about the app, the upside-down concept, and fun facts.
  */
 export default function AboutScreen() {
   return (
@@ -64,20 +64,20 @@ export default function AboutScreen() {
         <InfoRow
           icon="git-compare"
           iconColor={COLORS.primary}
-          title="2. Antipodal calculation"
-          body={`Antipodal latitude = –latitude\nAntipodal longitude = longitude + 180° (subtract 360 if > 180)`}
+          title="2. Upside Down calculation"
+          body={`Upside Down latitude = –latitude\nUpside Down longitude = longitude + 180° (subtract 360 if > 180)`}
         />
         <InfoRow
           icon="navigate"
           iconColor={COLORS.antipodal}
-          title="3. Your antipodal point"
+          title="3. Your Upside Down location"
           body="The exact spot where a tunnel drilled straight through the Earth's centre would exit."
         />
         <InfoRow
           icon="people"
           iconColor={COLORS.communityPin}
           title="4. Community"
-          body="Drop a pin to share your antipodal connection with explorers around the world!"
+          body="Drop a pin to share your Upside Down connection with explorers around the world!"
         />
       </View>
 
@@ -102,14 +102,14 @@ export default function AboutScreen() {
           <Text style={styles.factText}>
             Only{' '}
             <Text style={styles.factHighlight}>~4% of land on Earth</Text> has
-            land on the opposite side. Most antipodal points are in the ocean!
+            land on the opposite side. Most Upside Down points are in the ocean!
           </Text>
         </View>
 
         <View style={styles.factCard}>
           <Text style={styles.factEmoji}>🥝</Text>
           <Text style={styles.factText}>
-            The best land-to-land antipodal pairs are{' '}
+            The best land-to-land Upside Down pairs are{' '}
             <Text style={styles.factHighlight}>Spain ↔ New Zealand</Text> and{' '}
             <Text style={styles.factHighlight}>Argentina ↔ China</Text>.
           </Text>
@@ -118,7 +118,7 @@ export default function AboutScreen() {
         <View style={styles.factCard}>
           <Text style={styles.factEmoji}>🌺</Text>
           <Text style={styles.factText}>
-            Hawaii's antipodal point is in{' '}
+            Hawaii's Upside Down location is in{' '}
             <Text style={styles.factHighlight}>Botswana, Africa</Text>!
           </Text>
         </View>
@@ -144,7 +144,7 @@ export default function AboutScreen() {
         </View>
       </View>
 
-      <Text style={styles.footer}>UpsideDown v1.0.0 — Made with ❤️ for curious explorers</Text>
+      <Text style={styles.footer}>UpsideDown v1.1.0 — Made with ❤️ for curious explorers</Text>
     </ScrollView>
   );
 }

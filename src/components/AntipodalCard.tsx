@@ -9,12 +9,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Coordinates } from '../types';
 import { COLORS, EARTH_DIAMETER_KM, EARTH_DIAMETER_MILES } from '../utils/constants';
-import { formatCoordinates } from '../utils/helpers';
 
 interface AntipodalCardProps {
   originalLocation: Coordinates | null;
   antipodalLocation: Coordinates | null;
+  /** Human-readable name for the upside-down point (e.g. "South Pacific Ocean") */
   antipodalPlaceName?: string;
+  /** Human-readable name for the user's own location (e.g. "Calgary, Canada") */
+  originalPlaceName?: string;
+  /** Nearest land coordinates — shown only when upside-down lands in ocean */
+  nearestLandLocation?: Coordinates | null;
+  /** Human-readable name for the nearest land point */
+  nearestLandPlaceName?: string | null;
   loading?: boolean;
   onDropPin?: () => void;
   onToggleView?: () => void;
@@ -23,12 +29,16 @@ interface AntipodalCardProps {
 
 /**
  * AntipodalCard — Displays information about the user's current location
- * and its antipodal point, along with action buttons.
+ * and their Upside Down location, along with action buttons.
+ * Shows place names instead of raw coordinates for privacy.
  */
 export default function AntipodalCard({
   originalLocation,
   antipodalLocation,
   antipodalPlaceName,
+  originalPlaceName,
+  nearestLandLocation,
+  nearestLandPlaceName,
   loading = false,
   onDropPin,
   onToggleView,
@@ -47,7 +57,7 @@ export default function AntipodalCard({
     return (
       <View style={styles.card}>
         <Text style={styles.emptyText}>
-          Tap the button above to discover your antipodal point! 🌍
+          Tap the button above to discover your Upside Down! 🌍
         </Text>
       </View>
     );
@@ -63,8 +73,8 @@ export default function AntipodalCard({
             <Ionicons name="location" size={14} color={COLORS.userMarker} />
             <Text style={styles.labelText}>You are here</Text>
           </View>
-          <Text style={styles.coordText}>
-            {formatCoordinates(originalLocation)}
+          <Text style={styles.placeText}>
+            {originalPlaceName ?? '📍 Your Location'}
           </Text>
         </View>
 
@@ -76,20 +86,40 @@ export default function AntipodalCard({
           style={styles.arrow}
         />
 
-        {/* Antipodal location */}
+        {/* Upside Down location */}
         <View style={styles.locationCol}>
           <View style={styles.labelRow}>
             <Ionicons name="navigate" size={14} color={COLORS.antipodal} />
             <Text style={[styles.labelText, { color: COLORS.antipodal }]}>
-              Antipodal point
+              Upside Down
             </Text>
           </View>
-          <Text style={styles.coordText}>
-            {formatCoordinates(antipodalLocation)}
-          </Text>
-          {antipodalPlaceName ? (
-            <Text style={styles.placeNameText}>{antipodalPlaceName}</Text>
-          ) : null}
+
+          {/* Accurate dig row — show water wave emoji if in ocean, pin otherwise */}
+          <View style={styles.digRow}>
+            <Text style={styles.digIcon}>{nearestLandLocation ? '🌊' : '📍'}</Text>
+            <View style={styles.digTextBlock}>
+              <Text style={styles.digLabel}>Accurate Dig</Text>
+              <Text style={styles.placeText}>
+                {antipodalPlaceName ?? 'Calculating…'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Nearest land row — only shown when dig lands in ocean */}
+          {nearestLandLocation && nearestLandPlaceName && (
+            <View style={[styles.digRow, { marginTop: 6 }]}>
+              <Text style={styles.digIcon}>🏝️</Text>
+              <View style={styles.digTextBlock}>
+                <Text style={[styles.digLabel, { color: COLORS.nearestLand }]}>
+                  Nearest Land
+                </Text>
+                <Text style={[styles.placeText, { color: COLORS.nearestLand }]}>
+                  {nearestLandPlaceName}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       </View>
 
@@ -118,7 +148,7 @@ export default function AntipodalCard({
             style={[styles.button, styles.toggleButton]}
             onPress={onToggleView}
             accessibilityLabel={
-              isCurrentViewAntipodal ? 'Show my location' : 'Show antipodal point'
+              isCurrentViewAntipodal ? 'Show my location' : 'Show Upside Down location'
             }
           >
             <Ionicons
@@ -127,7 +157,7 @@ export default function AntipodalCard({
               color={COLORS.primary}
             />
             <Text style={styles.toggleButtonText}>
-              {isCurrentViewAntipodal ? 'My location' : 'Antipodal view'}
+              {isCurrentViewAntipodal ? 'My location' : 'Upside Down view'}
             </Text>
           </TouchableOpacity>
         )}
@@ -195,15 +225,29 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  coordText: {
+  placeText: {
     color: COLORS.textPrimary,
     fontSize: 12,
     fontWeight: '500',
   },
-  placeNameText: {
-    color: COLORS.antipodal,
-    fontSize: 11,
-    marginTop: 2,
+  digRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  digIcon: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  digTextBlock: {
+    flex: 1,
+  },
+  digLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   arrow: {
     marginHorizontal: 8,

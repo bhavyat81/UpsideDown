@@ -18,7 +18,7 @@ export const COLORS = {
   border: '#1e3a5f',
   /** Bright ocean blue — primary accent */
   primary: '#1a8cff',
-  /** Vibrant teal for antipodal markers */
+  /** Vibrant teal for upside-down markers */
   antipodal: '#00c9a7',
   /** Warm amber for the user's own marker */
   userMarker: '#f5a623',
@@ -32,6 +32,8 @@ export const COLORS = {
   success: '#27ae60',
   /** Error red */
   error: '#e74c3c',
+  /** Nearest land marker — fresh green */
+  nearestLand: '#2ecc71',
 };
 
 /** Firestore collection names */

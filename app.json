@@ -2,7 +2,7 @@
   "expo": {
     "name": "UpsideDown",
     "slug": "upsidedown",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,8 +15,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.upsidedown.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "UpsideDown needs your location to calculate your antipodal point — the other side of the Earth from where you stand!",
-        "NSLocationAlwaysUsageDescription": "UpsideDown needs your location to calculate your antipodal point."
+        "NSLocationWhenInUseUsageDescription": "UpsideDown needs your location to find what's on the other side of the Earth from you!",
+        "NSLocationAlwaysUsageDescription": "UpsideDown needs your location to find what's on the other side of the Earth from you!"
       }
     },
     "android": {
@@ -37,7 +37,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "UpsideDown needs your location to calculate your antipodal point — the other side of the Earth from where you stand!"
+          "locationAlwaysAndWhenInUsePermission": "UpsideDown needs your location to find what's on the other side of the Earth from you!"
         }
       ]
     ]

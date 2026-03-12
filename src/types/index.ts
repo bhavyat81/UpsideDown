@@ -18,6 +18,10 @@ export interface Pin {
   timestamp: number;
   /** Optional: country or ocean name for the antipodal point */
   antipodalPlaceName?: string;
+  /** Optional: nearest land coordinates when the upside-down point is in the ocean */
+  nearestLandLocation?: Coordinates;
+  /** Optional: place name for the nearest land point */
+  nearestLandPlaceName?: string;
 }
 
 /** Location state used throughout the app */
@@ -38,4 +42,21 @@ export interface GeocodingResult {
   city?: string;
   ocean?: string;
   isMostlyOcean: boolean;
+}
+
+/**
+ * Full result of a "dig through Earth" calculation.
+ * Includes both the exact upside-down point and (if in ocean) the nearest land.
+ */
+export interface DigResult {
+  /** Exact opposite point on Earth */
+  accurateDig: Coordinates;
+  /** Human-readable name for the accurate dig point */
+  accurateDigPlaceName: string;
+  /** Nearest land coordinates — null if the dig landed on land */
+  nearestLand: Coordinates | null;
+  /** Human-readable name for the nearest land point — null if on land */
+  nearestLandPlaceName: string | null;
+  /** True when the accurate dig point is in an ocean/sea */
+  isOcean: boolean;
 }
