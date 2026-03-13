@@ -1,14 +1,14 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, {
-  Marker,
   Polyline,
+  Circle,
   PROVIDER_DEFAULT,
   Region,
 } from 'react-native-maps';
 import { Coordinates, Pin, MapViewMode } from '../types';
 import PinMarker from './PinMarker';
-import { COLORS, MAP_DELTA } from '../utils/constants';
+import { COLORS, MAP_DELTA, MATCH_RADIUS_KM } from '../utils/constants';
 
 interface UpsideDownMapProps {
   currentLocation: Coordinates | null;
@@ -25,7 +25,7 @@ interface UpsideDownMapProps {
  *
  * Shows:
  * - The user's current location (amber marker)
- * - The upside-down point (teal marker)
+ * - The upside-down point (teal marker) with a 20 km match radius circle
  * - The nearest land point (green marker, only shown when upside-down point is in ocean)
  * - A dashed line connecting the two points (visual representation of the tunnel)
  * - A dashed line from the upside-down point to nearest land (when applicable)
@@ -39,7 +39,6 @@ export default function UpsideDownMapView({
   onCommunityPinPress,
   nearestLandLocation,
 }: UpsideDownMapProps) {
-  // Centre the map on the relevant point depending on view mode
   const centerLocation =
     viewMode === 'antipodal' ? antipodalLocation : currentLocation;
 
@@ -63,7 +62,6 @@ export default function UpsideDownMapView({
         showsScale
         accessibilityLabel="Interactive globe map"
       >
-        {/* User's current location marker */}
         {currentLocation && (
           <PinMarker
             coordinates={currentLocation}
@@ -73,7 +71,6 @@ export default function UpsideDownMapView({
           />
         )}
 
-        {/* Antipodal point marker */}
         {antipodalLocation && (
           <PinMarker
             coordinates={antipodalLocation}
@@ -83,7 +80,17 @@ export default function UpsideDownMapView({
           />
         )}
 
-        {/* Nearest land marker (shown when upside-down lands in ocean) */}
+        {/* 20 km match radius circle around the antipodal point */}
+        {antipodalLocation && (
+          <Circle
+            center={antipodalLocation}
+            radius={MATCH_RADIUS_KM * 1000}
+            fillColor={COLORS.radiusFill}
+            strokeColor={COLORS.radiusStroke}
+            strokeWidth={1.5}
+          />
+        )}
+
         {nearestLandLocation && (
           <PinMarker
             coordinates={nearestLandLocation}
@@ -93,7 +100,6 @@ export default function UpsideDownMapView({
           />
         )}
 
-        {/* Dashed polyline connecting original & upside-down (long-dash blue, represents the tunnel) */}
         {currentLocation && antipodalLocation && (
           <Polyline
             coordinates={[currentLocation, antipodalLocation]}
@@ -103,7 +109,6 @@ export default function UpsideDownMapView({
           />
         )}
 
-        {/* Short-dash green polyline from upside-down point to nearest land (shorter dashes = surface path) */}
         {antipodalLocation && nearestLandLocation && (
           <Polyline
             coordinates={[antipodalLocation, nearestLandLocation]}
@@ -113,7 +118,6 @@ export default function UpsideDownMapView({
           />
         )}
 
-        {/* Community pins */}
         {communityPins.map((pin) => (
           <React.Fragment key={pin.id}>
             <PinMarker

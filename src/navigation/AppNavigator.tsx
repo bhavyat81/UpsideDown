@@ -1,40 +1,100 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet } from 'react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import CommunityScreen from '../screens/CommunityScreen';
 import AboutScreen from '../screens/AboutScreen';
+import BuddiesScreen from '../screens/BuddiesScreen';
+import ChatScreen from '../screens/ChatScreen';
+import CreatePostcardScreen from '../screens/CreatePostcardScreen';
 import { COLORS } from '../utils/constants';
+import { Match, Coordinates } from '../types';
 
 export type RootTabParamList = {
   Home: undefined;
   Community: undefined;
+  BuddiesTab: undefined;
   About: undefined;
 };
 
+export type BuddiesStackParamList = {
+  BuddiesList: undefined;
+  Chat: { match: Match; currentUserId: string };
+};
+
+export type HomeStackParamList = {
+  HomeMain: undefined;
+  CreatePostcard: {
+    senderLocation: Coordinates;
+    antipodalLocation: Coordinates;
+    senderPlaceName: string;
+    antipodalPlaceName: string;
+    senderId: string;
+    senderName: string;
+    buddyId?: string;
+  };
+};
+
 const Tab = createBottomTabNavigator<RootTabParamList>();
+const BuddiesStack = createNativeStackNavigator<BuddiesStackParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+
+function BuddiesNavigator() {
+  return (
+    <BuddiesStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: COLORS.background },
+        headerTintColor: COLORS.textPrimary,
+        headerTitleStyle: { fontWeight: '700' },
+      }}
+    >
+      <BuddiesStack.Screen
+        name="BuddiesList"
+        component={BuddiesScreen}
+        options={{ title: '🌍 Earth Twins' }}
+      />
+      <BuddiesStack.Screen name="Chat" component={ChatScreen} />
+    </BuddiesStack.Navigator>
+  );
+}
+
+function HomeNavigator() {
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: COLORS.background },
+        headerTintColor: COLORS.textPrimary,
+        headerTitleStyle: { fontWeight: '700' },
+      }}
+    >
+      <HomeStack.Screen
+        name="HomeMain"
+        component={HomeScreen}
+        options={{ title: '🌍 UpsideDown' }}
+      />
+      <HomeStack.Screen
+        name="CreatePostcard"
+        component={CreatePostcardScreen}
+        options={{ title: '✉️ Create Postcard' }}
+      />
+    </HomeStack.Navigator>
+  );
+}
 
 /**
  * Bottom-tab navigator for UpsideDown.
- * Three tabs: Home (map), Community (other users' pins), About.
+ * Four tabs: Home (map), Community, Earth Twins / Buddies, About.
  */
 export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          headerStyle: {
-            backgroundColor: COLORS.background,
-            borderBottomColor: COLORS.border,
-            borderBottomWidth: 1,
-          },
-          headerTintColor: COLORS.textPrimary,
-          headerTitleStyle: {
-            fontWeight: '700',
-          },
+          headerShown: false,
           tabBarStyle: {
             backgroundColor: COLORS.surface,
             borderTopColor: COLORS.border,
@@ -49,10 +109,10 @@ export default function AppNavigator() {
               iconName = focused ? 'earth' : 'earth-outline';
             } else if (route.name === 'Community') {
               iconName = focused ? 'people' : 'people-outline';
+            } else if (route.name === 'BuddiesTab') {
+              iconName = focused ? 'heart' : 'heart-outline';
             } else if (route.name === 'About') {
-              iconName = focused
-                ? 'information-circle'
-                : 'information-circle-outline';
+              iconName = focused ? 'information-circle' : 'information-circle-outline';
             }
 
             return (
@@ -65,18 +125,37 @@ export default function AppNavigator() {
       >
         <Tab.Screen
           name="Home"
-          component={HomeScreen}
-          options={{ title: '🌍 UpsideDown' }}
+          component={HomeNavigator}
+          options={{ title: 'Home' }}
         />
         <Tab.Screen
           name="Community"
           component={CommunityScreen}
-          options={{ title: '👥 Community Pins' }}
+          options={{
+            title: 'Community',
+            headerShown: true,
+            headerStyle: { backgroundColor: COLORS.background },
+            headerTintColor: COLORS.textPrimary,
+            headerTitleStyle: { fontWeight: '700' },
+            headerTitle: '👥 Community Pins',
+          }}
+        />
+        <Tab.Screen
+          name="BuddiesTab"
+          component={BuddiesNavigator}
+          options={{ title: 'Earth Twins' }}
         />
         <Tab.Screen
           name="About"
           component={AboutScreen}
-          options={{ title: 'ℹ️ About' }}
+          options={{
+            title: 'About',
+            headerShown: true,
+            headerStyle: { backgroundColor: COLORS.background },
+            headerTintColor: COLORS.textPrimary,
+            headerTitleStyle: { fontWeight: '700' },
+            headerTitle: 'ℹ️ About',
+          }}
         />
       </Tab.Navigator>
     </NavigationContainer>

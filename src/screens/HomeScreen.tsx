@@ -1,89 +1,79 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Alert,
+  StyleSheet,
   TouchableOpacity,
   Animated,
   ScrollView,
-  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { Coordinates, Pin, MapViewMode } from '../types';
+import { COLORS } from '../utils/constants';
 import UpsideDownMapView from '../components/MapView';
 import AntipodalCard from '../components/AntipodalCard';
-import GlobeAnimation from '../components/GlobeAnimation';
 import DigAnimation from '../components/DigAnimation';
-import {
-  requestLocationPermission,
-  getCurrentLocation,
-  reverseGeocode,
-} from '../services/location';
+import GlobeAnimation from '../components/GlobeAnimation';
 import {
   calculateAntipodal,
-  getAntipodalFunFact,
-  isLikelyOcean,
   findNearestLand,
+  isLikelyOcean,
+  getAntipodalFunFact,
 } from '../services/antipodal';
 import {
   initFirebase,
   signInAnon,
   savePin,
   subscribeToPins,
+  subscribeToMatches,
+  saveMatch,
+  getCurrentUser,
 } from '../services/firebase';
-import { Coordinates, Pin, MapViewMode } from '../types';
-import { COLORS } from '../utils/constants';
+import { getCurrentLocation, reverseGeocode, requestLocationPermission } from '../services/location';
 import { generateAnonymousName } from '../utils/helpers';
+import {
+  findEarthTwinCandidates,
+  findAntipodalNeighbours,
+  buildMatch,
+} from '../services/matching';
 
-/**
- * HomeScreen — The main screen of UpsideDown.
- *
- * Responsibilities:
- * - Request & obtain GPS location
- * - Calculate the upside-down point
- * - Render the dig animation, then reveal the interactive map
- * - Allow the user to drop a community pin
- */
 export default function HomeScreen() {
+  const navigation = useNavigation<any>();
+
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
   const [antipodalLocation, setAntipodalLocation] = useState<Coordinates | null>(null);
-  const [antipodalPlaceName, setAntipodalPlaceName] = useState<string | undefined>();
-  const [currentPlaceName, setCurrentPlaceName] = useState<string | undefined>();
+  const [antipodalPlaceName, setAntipodalPlaceName] = useState<string | null>(null);
+  const [currentPlaceName, setCurrentPlaceName] = useState<string | null>(null);
   const [nearestLandLocation, setNearestLandLocation] = useState<Coordinates | null>(null);
   const [nearestLandPlaceName, setNearestLandPlaceName] = useState<string | null>(null);
   const [communityPins, setCommunityPins] = useState<Pin[]>([]);
-  const [viewMode, setViewMode] = useState<MapViewMode>('original');
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [funFact, setFunFact] = useState<string>('');
   const [showWelcome, setShowWelcome] = useState(true);
   const [showDigAnimation, setShowDigAnimation] = useState(false);
+  const [viewMode, setViewMode] = useState<MapViewMode>('original');
+  const [funFact, setFunFact] = useState('');
 
-  // Fade-in animation for the welcome screen
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Show welcome screen with fade-in
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
       useNativeDriver: true,
     }).start();
 
-    // Initialize Firebase and sign in anonymously
     initFirebase();
     signInAnon()
       .then((user) => setUserId(user.uid))
       .catch(() => {
-        // Firebase not configured yet — app still works in local mode
+        // Firebase not configured — app still works in local mode
       });
 
-    // Set an initial fun fact
     setFunFact(getAntipodalFunFact());
 
-    // Subscribe to community pins
     const unsubscribe = subscribeToPins(setCommunityPins);
     return () => unsubscribe();
   }, [fadeAnim]);
@@ -105,13 +95,11 @@ export default function HomeScreen() {
         return;
       }
 
-      // Show the dig animation immediately while we fetch in parallel
       setShowDigAnimation(true);
 
       const location = await getCurrentLocation();
       setCurrentLocation(location);
 
-      // Reverse geocode the user's own location
       reverseGeocode(location)
         .then(setCurrentPlaceName)
         .catch(() => {});
@@ -119,7 +107,6 @@ export default function HomeScreen() {
       const antipodal = calculateAntipodal(location);
       setAntipodalLocation(antipodal);
 
-      // Reverse geocode the upside-down point, then check for nearest land
       reverseGeocode(antipodal)
         .then(async (placeName) => {
           setAntipodalPlaceName(placeName);
@@ -136,13 +123,10 @@ export default function HomeScreen() {
           }
         })
         .catch(() => {
-          // Geocoding failed — we don't know if it's ocean or land,
-          // so we skip the nearest land marker rather than showing a misleading one
           setAntipodalPlaceName('Unknown location');
           setNearestLandLocation(null);
         });
 
-      // Refresh the fun fact
       setFunFact(getAntipodalFunFact());
     } catch (err) {
       setShowDigAnimation(false);
@@ -156,7 +140,6 @@ export default function HomeScreen() {
     }
   }, []);
 
-  // Called when the dig animation finishes playing
   const handleAnimationComplete = useCallback(() => {
     setShowDigAnimation(false);
   }, []);
@@ -178,13 +161,40 @@ export default function HomeScreen() {
         username,
         currentLocation,
         antipodalLocation,
-        antipodalPlaceName,
+        antipodalPlaceName ?? undefined,
       );
-      Alert.alert(
-        '📍 Pin Dropped!',
-        `Your Upside Down connection has been shared with the community as "${username}"!`,
-        [{ text: 'Awesome! 🎉' }],
+
+      // Check for Earth Twin matches
+      const candidates = [
+        ...findEarthTwinCandidates(currentLocation, communityPins, userId),
+        ...findAntipodalNeighbours(antipodalLocation, communityPins, userId),
+      ];
+      const uniqueCandidates = Array.from(
+        new Map(candidates.map((c) => [c.userId, c])).values(),
       );
+
+      if (uniqueCandidates.length > 0) {
+        const buddy = uniqueCandidates[0];
+        const matchData = buildMatch(
+          userId,
+          username,
+          currentLocation,
+          antipodalLocation,
+          buddy,
+        );
+        await saveMatch(matchData);
+        Alert.alert(
+          '🌍 Earth Twin Found!',
+          `You matched with ${buddy.username ?? 'an Anonymous Explorer'}! Head to the Earth Twins tab to chat!`,
+          [{ text: 'Awesome! 🎉' }],
+        );
+      } else {
+        Alert.alert(
+          '📍 Pin Dropped!',
+          `Your Upside Down connection has been shared with the community as "${username}"!`,
+          [{ text: 'Awesome! 🎉' }],
+        );
+      }
     } catch {
       Alert.alert(
         'Could not save pin',
@@ -192,13 +202,24 @@ export default function HomeScreen() {
         [{ text: 'OK' }],
       );
     }
-  }, [currentLocation, antipodalLocation, userId, antipodalPlaceName]);
+  }, [currentLocation, antipodalLocation, userId, antipodalPlaceName, communityPins]);
+
+  const handleSendPostcard = useCallback(() => {
+    if (!currentLocation || !antipodalLocation || !userId) return;
+    navigation.navigate('CreatePostcard', {
+      senderLocation: currentLocation,
+      antipodalLocation,
+      senderPlaceName: currentPlaceName ?? 'Your Location',
+      antipodalPlaceName: nearestLandPlaceName ?? antipodalPlaceName ?? 'The Other Side',
+      senderId: userId,
+      senderName: generateAnonymousName(userId),
+    });
+  }, [currentLocation, antipodalLocation, userId, currentPlaceName, antipodalPlaceName, nearestLandPlaceName, navigation]);
 
   const handleToggleView = useCallback(() => {
     setViewMode((prev) => (prev === 'original' ? 'antipodal' : 'original'));
   }, []);
 
-  // Welcome / splash screen
   if (showWelcome && !loading) {
     return (
       <Animated.View style={[styles.welcomeContainer, { opacity: fadeAnim }]}>
@@ -242,12 +263,10 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Dig animation — shown immediately after tapping the button */}
       {showDigAnimation && (
         <DigAnimation onComplete={handleAnimationComplete} />
       )}
 
-      {/* Map fills most of the screen */}
       <View style={styles.mapContainer}>
         <UpsideDownMapView
           currentLocation={currentLocation}
@@ -270,7 +289,6 @@ export default function HomeScreen() {
           }}
         />
 
-        {/* Refresh location button */}
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleFindAntipodal}
@@ -278,14 +296,24 @@ export default function HomeScreen() {
         >
           <Ionicons name="refresh" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
+
+        {currentLocation && antipodalLocation && (
+          <TouchableOpacity
+            style={styles.postcardButton}
+            onPress={handleSendPostcard}
+            accessibilityLabel="Send a postcard"
+          >
+            <Ionicons name="mail" size={18} color={COLORS.background} />
+            <Text style={styles.postcardButtonText}>Send Postcard</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Info card at the bottom */}
       <AntipodalCard
         originalLocation={currentLocation}
         antipodalLocation={antipodalLocation}
-        antipodalPlaceName={antipodalPlaceName}
-        originalPlaceName={currentPlaceName}
+        antipodalPlaceName={antipodalPlaceName ?? undefined}
+        originalPlaceName={currentPlaceName ?? undefined}
         nearestLandLocation={nearestLandLocation}
         nearestLandPlaceName={nearestLandPlaceName}
         loading={loading}
@@ -321,7 +349,28 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  // Welcome screen styles
+  postcardButton: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  postcardButtonText: {
+    color: COLORS.background,
+    fontWeight: '700',
+    fontSize: 13,
+  },
   welcomeContainer: {
     flex: 1,
     backgroundColor: COLORS.background,
