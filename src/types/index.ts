@@ -60,3 +60,54 @@ export interface DigResult {
   /** True when the accurate dig point is in an ocean/sea */
   isOcean: boolean;
 }
+
+/** An Earth Twin match between two users whose antipodal points are near each other */
+export interface Match {
+  id: string;
+  user1Id: string;
+  user2Id: string;
+  user1Name: string;
+  user2Name: string;
+  /** General area location of user 1 (not exact) */
+  user1Location: Coordinates;
+  /** General area location of user 2 (not exact) */
+  user2Location: Coordinates;
+  matchedAt: number;
+  user1AntipodalLocation: Coordinates;
+  user2AntipodalLocation: Coordinates;
+}
+
+/** A single chat message in a buddy conversation */
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: number;
+}
+
+/** Weather data for a location */
+export interface WeatherData {
+  temperature: number;
+  description: string;
+  emoji: string;
+}
+
+/** A postcard sent from one location to another */
+export interface Postcard {
+  id: string;
+  senderId: string;
+  senderName: string;
+  /** Matched buddy ID, or 'public' for community postcards */
+  recipientId: string;
+  senderLocation: Coordinates;
+  antipodalLocation: Coordinates;
+  senderPlaceName: string;
+  antipodalPlaceName: string;
+  senderTemperature: number | null;
+  antipodalTemperature: number | null;
+  senderWeather: string;
+  antipodalWeather: string;
+  /** Custom message written by the user */
+  message: string;
+  timestamp: number;
+}
