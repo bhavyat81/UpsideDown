@@ -67,6 +67,8 @@ export const POSTCARD_MAX_LENGTH = 300;
 
 /** Maximum character length for chat messages */
 export const CHAT_MAX_LENGTH = 500;
+
+/** Map delta values for zoom level */
 export const MAP_DELTA = {
   default: {
     latitudeDelta: 30,

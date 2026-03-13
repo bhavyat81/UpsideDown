@@ -25,7 +25,10 @@ import { Pin, Coordinates, Match, ChatMessage, Postcard } from '../types';
 import { COLLECTIONS, PUBLIC_RECIPIENT_ID } from '../utils/constants';
 
 /** True when the app is running without real Firebase credentials */
-const IS_LOCAL_MODE = firebaseConfig.apiKey === 'YOUR_API_KEY';
+const IS_LOCAL_MODE =
+  !firebaseConfig.apiKey ||
+  firebaseConfig.apiKey === 'YOUR_API_KEY' ||
+  firebaseConfig.apiKey.startsWith('YOUR_');
 
 let app: FirebaseApp;
 let auth: Auth;

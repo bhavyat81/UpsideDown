@@ -83,7 +83,7 @@ export default function CreatePostcardScreen() {
     antipodalTemperature: antipodalTemp,
     senderWeather: senderWeatherStr,
     antipodalWeather: antipodalWeatherStr,
-    message: message || 'Write your message below…',
+    message: message.trim() || 'Write your message below…',
     timestamp: Date.now(),
   };
 

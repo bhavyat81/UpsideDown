@@ -17,6 +17,9 @@ import { COLORS, CHAT_MAX_LENGTH } from '../utils/constants';
 import ChatBubble from '../components/ChatBubble';
 import { sendMessage, subscribeToMessages } from '../services/chat';
 
+/** Delay (ms) after receiving messages before scrolling to end — allows layout to complete */
+const SCROLL_DELAY_MS = 100;
+
 type ChatRouteParams = {
   Chat: {
     match: Match;
@@ -41,7 +44,7 @@ export default function ChatScreen() {
     navigation.setOptions({ title: `💬 ${buddyName}` });
     const unsubscribe = subscribeToMessages(match.id, (msgs) => {
       setMessages(msgs);
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), SCROLL_DELAY_MS);
     });
     return unsubscribe;
   }, [match.id, buddyName, navigation]);

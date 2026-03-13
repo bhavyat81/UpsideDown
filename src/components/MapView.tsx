@@ -10,6 +10,9 @@ import { Coordinates, Pin, MapViewMode } from '../types';
 import PinMarker from './PinMarker';
 import { COLORS, MAP_DELTA, MATCH_RADIUS_KM } from '../utils/constants';
 
+/** Conversion factor from kilometres to metres (for react-native-maps Circle radius) */
+const METERS_PER_KM = 1000;
+
 interface UpsideDownMapProps {
   currentLocation: Coordinates | null;
   antipodalLocation: Coordinates | null;
@@ -84,7 +87,7 @@ export default function UpsideDownMapView({
         {antipodalLocation && (
           <Circle
             center={antipodalLocation}
-            radius={MATCH_RADIUS_KM * 1000}
+            radius={MATCH_RADIUS_KM * METERS_PER_KM}
             fillColor={COLORS.radiusFill}
             strokeColor={COLORS.radiusStroke}
             strokeWidth={1.5}

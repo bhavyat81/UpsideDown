@@ -28,6 +28,9 @@ const WMO_CODES: Record<number, { description: string; emoji: string }> = {
   99:  { description: 'Thunderstorm w/ hail',  emoji: '⛈️' },
 };
 
+/** Timeout in ms for weather API requests */
+const WEATHER_API_TIMEOUT_MS = 8000;
+
 /**
  * Fetch current weather from Open-Meteo (no API key required).
  * Returns null on any failure so the app degrades gracefully.
@@ -40,7 +43,7 @@ export async function fetchWeather(coords: Coordinates): Promise<WeatherData | n
       `&longitude=${coords.longitude.toFixed(4)}` +
       `&current_weather=true`;
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const response = await fetch(url, { signal: AbortSignal.timeout(WEATHER_API_TIMEOUT_MS) });
     if (!response.ok) return null;
 
     const json = await response.json();
